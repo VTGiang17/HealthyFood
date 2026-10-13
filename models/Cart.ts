@@ -38,7 +38,7 @@ const cartItemSchema = new Schema({
     type: Number,
     required: true,
     min: 1,
-    default: 1,
+    max: 99,
   },
 });
 
@@ -54,6 +54,16 @@ const cartSchema = new Schema(
     items: {
       type: [cartItemSchema],
       default: [],
+    },
+
+    checkout_token: {
+      type: String,
+      default: null,
+    },
+
+    checkout_locked_at: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

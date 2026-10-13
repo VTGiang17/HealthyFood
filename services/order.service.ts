@@ -26,12 +26,20 @@ const validateId = (id: string) => {
   }
 };
 
-// Tạo đơn hàng từ giỏ hàng
+const allowedTransitions: Record<string, string[]> = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["preparing", "cancelled"],
+  preparing: ["delivering", "cancelled"],
+  delivering: ["completed"],
+  completed: [],
+  cancelled: [],
+};
+
+// Tạo đơn từ giỏ hàng
 export const createOrder = async (userId: string, data: CreateOrderInput) => {
   const token = randomUUID();
-  const now = new Date();
 
-  // Khóa giỏ hàng bằng thao tác nguyên tử.
+  // Khóa giỏ hàng, tránh checkout đồng thời.
   const lockedCart = await Cart.findOneAndUpdate(
     {
       user_id: userId,
@@ -41,7 +49,7 @@ export const createOrder = async (userId: string, data: CreateOrderInput) => {
     {
       $set: {
         checkout_token: token,
-        checkout_locked_at: now,
+        checkout_locked_at: new Date(),
       },
     },
     { new: true }
@@ -52,46 +60,36 @@ export const createOrder = async (userId: string, data: CreateOrderInput) => {
   }
 
   try {
+    // Tính lại giá từ database.
     const cart = await getCart(userId);
 
     if (cart.items.length === 0) {
       throw new OrderError("Giỏ hàng trống", 400);
     }
 
-    const orderItems = cart.items.map((item) => {
-      const details = item.details as any;
+    if (cart.items.some((item) => !item.available)) {
+      throw new OrderError(
+        "Giỏ hàng có món không còn khả dụng. Vui lòng xóa món đó trước khi đặt hàng",
+        400
+      );
+    }
 
-      const ingredients =
-        item.type === "custom"
-          ? details.map((ingredient: any) => ({
-              ingredient_id: ingredient.ingredient_id,
-              name: ingredient.name,
-              quantity: ingredient.quantity,
-            }))
-          : [];
-
-      return {
-        type: item.type,
-        meal_id: item.meal_id,
-        name: item.name,
-        image_url: item.image_url,
-        ingredients,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        subtotal: item.subtotal,
-        nutrition: {
-          calories: item.calories / item.quantity,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        },
-      };
-    });
+    const orderItems = cart.items.map((item) => ({
+      type: item.type,
+      meal_id: item.meal_id,
+      name: item.name,
+      image_url: item.image_url,
+      ingredients: item.ingredients,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      subtotal: item.subtotal,
+      nutrition: item.nutrition,
+    }));
 
     const session = await mongoose.startSession();
 
     try {
-      let orderId = "";
+      let orderId: string | null = null;
 
       await session.withTransaction(async () => {
         const currentCart = await Cart.findOne({
@@ -126,11 +124,16 @@ export const createOrder = async (userId: string, data: CreateOrderInput) => {
         await currentCart.save({ session });
       });
 
+      if (!orderId) {
+        throw new OrderError("Không thể tạo đơn hàng", 500);
+      }
+
       return Order.findById(orderId).lean();
     } finally {
       await session.endSession();
     }
   } finally {
+    // Mở khóa nếu checkout thất bại.
     await Cart.updateOne(
       {
         user_id: userId,
@@ -146,7 +149,7 @@ export const createOrder = async (userId: string, data: CreateOrderInput) => {
   }
 };
 
-// Lịch sử đơn hàng của khách
+// Lịch sử đơn hàng
 export const getMyOrders = async (userId: string) => {
   return Order.find({ user_id: userId }).sort({ createdAt: -1 }).lean();
 };
@@ -176,7 +179,7 @@ export const getOrderById = async (
   return order;
 };
 
-// Khách hàng hủy đơn đang chờ
+// Khách hủy đơn
 export const cancelMyOrder = async (id: string, userId: string) => {
   validateId(id);
 
@@ -196,13 +199,13 @@ export const cancelMyOrder = async (id: string, userId: string) => {
   );
 
   if (!order) {
-    throw new OrderError("Không tìm thấy đơn hoặc đơn không thể hủy", 409);
+    throw new OrderError("Đơn không tồn tại hoặc không thể hủy", 409);
   }
 
   return order;
 };
 
-// Admin lấy danh sách đơn
+// Admin lấy tất cả đơn
 export const getAllOrders = async (status?: string) => {
   const filter: Record<string, unknown> = {};
 
@@ -214,16 +217,6 @@ export const getAllOrders = async (status?: string) => {
     .populate("user_id", "full_name email phone")
     .sort({ createdAt: -1 })
     .lean();
-};
-
-// Quy tắc chuyển trạng thái
-const allowedTransitions: Record<string, string[]> = {
-  pending: ["confirmed", "cancelled"],
-  confirmed: ["preparing", "cancelled"],
-  preparing: ["delivering", "cancelled"],
-  delivering: ["completed"],
-  completed: [],
-  cancelled: [],
 };
 
 // Admin cập nhật trạng thái
@@ -269,7 +262,7 @@ export const updateOrderStatus = async (id: string, status: OrderStatus) => {
   );
 
   if (!updated) {
-    throw new OrderError("Trạng thái đơn đã thay đổi, vui lòng thử lại", 409);
+    throw new OrderError("Đơn hàng đã được cập nhật bởi yêu cầu khác", 409);
   }
 
   return updated;
