@@ -1,4 +1,5 @@
 import { get, post, put, del } from "@/libs/axios";
+import { API_PATH } from "@/api/apiPath";
 
 export interface CartItem {
   _id: string;
@@ -35,11 +36,11 @@ interface ApiResponse<T> {
 }
 
 // Lấy giỏ hàng
-export const getCart = () => get<ApiResponse<CartData>>("/api/cart");
+export const getCart = () => get<ApiResponse<CartData>>(API_PATH.CART.BASE);
 
 // Thêm món có sẵn vào giỏ
 export const addMealToCart = (mealId: string, quantity = 1) =>
-  post<ApiResponse<CartData>>("/api/cart", {
+  post<ApiResponse<CartData>>(API_PATH.CART.BASE, {
     type: "meal",
     meal_id: mealId,
     quantity,
@@ -47,8 +48,8 @@ export const addMealToCart = (mealId: string, quantity = 1) =>
 
 // Cập nhật số lượng
 export const updateCartQuantity = (itemId: string, quantity: number) =>
-  put<ApiResponse<CartData>>(`/api/cart/items/${itemId}`, { quantity });
+  put<ApiResponse<CartData>>(API_PATH.CART.ITEM(itemId), { quantity });
 
 // Xóa một dòng trong giỏ
 export const removeCartItem = (itemId: string) =>
-  del<ApiResponse<CartData>>(`/api/cart/items/${itemId}`);
+  del<ApiResponse<CartData>>(API_PATH.CART.ITEM(itemId));

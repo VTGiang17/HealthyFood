@@ -105,7 +105,7 @@ export default function Footer() {
         <div
           className={`${container} flex flex-col items-center justify-between gap-2 py-5 text-center text-[11px] text-white/50 sm:flex-row sm:text-left`}
         >
-          <p>© {new Date().getFullYear()} Heat&Heart. All rights reserved.</p>
+          <p>© Heat&Heart. All rights reserved.</p>
           <p>Ăn ngon mỗi ngày - Sống khỏe mỗi ngày</p>
         </div>
       </div>

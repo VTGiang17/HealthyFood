@@ -1,4 +1,5 @@
 import { connectDB } from "@/libs/mongo";
+import { connection } from "next/server";
 import { NextResponse } from "next/server";
 
 type Handler<T extends Record<string, string> = Record<string, string>> = (
@@ -10,6 +11,8 @@ export function withDB<
   T extends Record<string, string> = Record<string, string>
 >(handler: Handler<T>): Handler<T> {
   return async (req, context) => {
+    await connection();
+
     try {
       await connectDB();
 

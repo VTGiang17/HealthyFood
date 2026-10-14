@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
+import { Suspense } from "react";
 
 import AntdProvider from "@/components/provider/AntdProvider";
 
@@ -24,7 +25,9 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={beVietnamPro.className}>
-        <AntdProvider>{children}</AntdProvider>
+        <Suspense fallback={null}>
+          <AntdProvider>{children}</AntdProvider>
+        </Suspense>
       </body>
     </html>
   );

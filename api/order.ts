@@ -1,4 +1,5 @@
 import { post } from "@/libs/axios";
+import { API_PATH } from "@/api/apiPath";
 
 export interface CreateOrderPayload {
   receiver_name: string;
@@ -19,4 +20,4 @@ interface CreateOrderResponse {
 }
 
 export const createOrder = (payload: CreateOrderPayload) =>
-  post<CreateOrderResponse>("/api/orders", payload);
+  post<CreateOrderResponse>(API_PATH.ORDER.BASE, payload);
