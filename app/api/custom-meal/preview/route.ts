@@ -9,7 +9,7 @@ import {
 
 import { customMealSchema } from "@/validations/customMeal.schema";
 
-export const runtime = "nodejs";
+
 
 export const POST = withDB(async (req: Request) => {
   try {

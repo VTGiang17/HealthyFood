@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import NewsletterForm from "@/components/home/NewsletterForm";
 
+import FeaturedMeals from "@/components/home/FeaturedMeals";
+
 const container = "mx-auto w-full max-w-[1200px] px-5 lg:px-8";
 const img = (id: string, w = 800) =>
   `https://images.unsplash.com/${id}?w=${w}&auto=format&fit=crop&q=85`;
@@ -36,44 +38,44 @@ const IMG = {
   lowcarb: "photo-1546069901-ba9599a7e63c",
 };
 
-const meals = [
-  {
-    id: 1,
-    name: "Cơm gà nướng sốt mè",
-    calories: 420,
-    price: 65000,
-    badge: "Bán chạy",
-    badgeClass: "bg-[#f59e0b]",
-    image: img(IMG.chicken),
-  },
-  {
-    id: 2,
-    name: "Cơm bò áp chảo",
-    calories: 450,
-    price: 75000,
-    badge: "Đề xuất",
-    badgeClass: "bg-[#17834c]",
-    image: img(IMG.beef),
-  },
-  {
-    id: 3,
-    name: "Cơm cá hồi teriyaki",
-    calories: 380,
-    price: 85000,
-    badge: "",
-    badgeClass: "",
-    image: img(IMG.salmon),
-  },
-  {
-    id: 4,
-    name: "Cơm chay thanh đạm",
-    calories: 320,
-    price: 55000,
-    badge: "",
-    badgeClass: "",
-    image: img(IMG.veggie),
-  },
-];
+// const meals = [
+//   {
+//     id: 1,
+//     name: "Cơm gà nướng sốt mè",
+//     calories: 420,
+//     price: 65000,
+//     badge: "Bán chạy",
+//     badgeClass: "bg-[#f59e0b]",
+//     image: img(IMG.chicken),
+//   },
+//   {
+//     id: 2,
+//     name: "Cơm bò áp chảo",
+//     calories: 450,
+//     price: 75000,
+//     badge: "Đề xuất",
+//     badgeClass: "bg-[#17834c]",
+//     image: img(IMG.beef),
+//   },
+//   {
+//     id: 3,
+//     name: "Cơm cá hồi teriyaki",
+//     calories: 380,
+//     price: 85000,
+//     badge: "",
+//     badgeClass: "",
+//     image: img(IMG.salmon),
+//   },
+//   {
+//     id: 4,
+//     name: "Cơm chay thanh đạm",
+//     calories: 320,
+//     price: 55000,
+//     badge: "",
+//     badgeClass: "",
+//     image: img(IMG.veggie),
+//   },
+// ];
 
 const categories = [
   { name: "Cơm gà", image: img(IMG.chicken, 400), badge: "" },
@@ -215,79 +217,10 @@ export default function HomePage() {
       </section>
 
       {/* FEATURED MEALS */}
-      <section className="bg-white py-12 lg:py-14">
-        <div className={container}>
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 className="text-[27px] font-extrabold tracking-[-0.03em] text-[#17271e] sm:text-[30px]">
-                Món ăn nổi bật
-              </h2>
-              <p className="mt-1.5 text-[12px] text-gray-500">
-                Những phần cơm healthy được yêu thích nhất
-              </p>
-            </div>
-
-            <Link
-              href="/meals"
-              className="inline-flex items-center gap-1.5 text-[12px] font-bold text-[#145b38] hover:underline"
-            >
-              Xem tất cả <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3.5 sm:gap-5 lg:grid-cols-4">
-            {meals.map((meal) => (
-              <article
-                key={meal.id}
-                className="group overflow-hidden rounded-2xl border border-[#edf0eb] bg-white shadow-[0_5px_18px_rgba(0,0,0,0.05)] transition hover:-translate-y-1 hover:shadow-lg"
-              >
-                <div className="relative aspect-[1.4] overflow-hidden bg-[#edf3e9]">
-                  <img
-                    src={meal.image}
-                    alt={meal.name}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-
-                  {meal.badge && (
-                    <span
-                      className={`absolute left-2.5 top-2.5 rounded-md px-2.5 py-1 text-[10px] font-bold text-white ${meal.badgeClass}`}
-                    >
-                      {meal.badge}
-                    </span>
-                  )}
-                </div>
-
-                <div className="p-3 sm:p-4">
-                  <h3 className="line-clamp-1 text-[12px] font-semibold text-[#182a20] sm:text-[13px]">
-                    {meal.name}
-                  </h3>
-
-                  <p className="mt-1 text-[11px] text-gray-400">
-                    {meal.calories} kcal
-                  </p>
-
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-[14px] font-extrabold text-[#145b38] sm:text-[15px]">
-                      {formatPrice(meal.price)}
-                    </span>
-
-                    <Link
-                      href="/meals"
-                      aria-label={`Xem ${meal.name}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-[#145b38] text-white transition hover:bg-[#0d462b]"
-                    >
-                      <Plus size={17} />
-                    </Link>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FeaturedMeals />
 
       {/* CATEGORIES */}
-      <section className="bg-[#f8faf6] py-12">
+      {/* <section className="bg-[#f8faf6] py-12">
         <div className={container}>
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -332,7 +265,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* BUILD YOUR BOWL */}
       <section className="relative overflow-hidden bg-[#f1f6ee] py-14 lg:py-16">
@@ -442,7 +375,7 @@ export default function HomePage() {
         <div className={`${container} grid items-center gap-9 lg:grid-cols-2`}>
           <div>
             <p className="mb-3 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#16834b]">
-              Vì sao chọn HealthyBowl?
+              Vì sao chọn Heat&Heart?
             </p>
 
             <h2 className="max-w-[420px] text-[28px] font-extrabold leading-[1.25] tracking-[-0.035em] text-[#17271e] sm:text-[34px]">

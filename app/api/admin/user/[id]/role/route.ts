@@ -7,7 +7,7 @@ import { updateUserRole, handleUserError } from "@/services/user.service";
 
 import { userRoleSchema } from "@/validations/user.schema";
 
-export const runtime = "nodejs";
+
 
 // PATCH /api/admin/users/:id/role
 export const PATCH = withDB<{ id: string }>(async (req, context) => {

@@ -7,7 +7,7 @@ import { updateOrderStatus, handleOrderError } from "@/services/order.service";
 
 import { orderStatusSchema } from "@/validations/order.schema";
 
-export const runtime = "nodejs";
+
 
 // PATCH /api/admin/orders/:id/status
 export const PATCH = withDB<{ id: string }>(async (req, context) => {

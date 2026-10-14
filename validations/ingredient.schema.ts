@@ -1,35 +1,52 @@
 import { z } from "zod";
 
-export const createIngredientSchema = z
-  .object({
-    category_id: z
-      .string()
-      .regex(/^[0-9a-fA-F]{24}$/, "ID danh mục không hợp lệ"),
-    name: z.string().trim().min(2, "Tên nguyên liệu tối thiểu 2 ký tự"),
-    description: z.string().trim().optional(),
-    image_url: z.union([z.url(), z.literal("")]).optional(),
+const ingredientBaseSchema = z.object({
+  category_id: z.string().min(1, "Vui lòng chọn danh mục"),
 
-    nutrition: z.object({
-      calories: z.number().min(0),
-      protein: z.number().min(0),
-      carbs: z.number().min(0),
-      fat: z.number().min(0),
-    }),
+  name: z.string().trim().min(1, "Vui lòng nhập tên nguyên liệu"),
 
-    price_per_100g: z.number().min(0),
-    min_grams: z.number().positive(),
-    max_grams: z.number().positive(),
-    step_grams: z.number().positive(),
-    is_active: z.boolean().optional(),
-  })
-  .refine((data) => data.max_grams >= data.min_grams, {
+  description: z.string().trim().optional().default(""),
+
+  image_url: z.string().optional().default(""),
+
+  nutrition: z.object({
+    calories: z.number().min(0),
+    protein: z.number().min(0).optional(),
+    carbs: z.number().min(0).optional(),
+    fat: z.number().min(0).optional(),
+  }),
+
+  price_per_100g: z.number().min(0),
+
+  min_grams: z.number().min(1),
+
+  max_grams: z.number().min(1),
+
+  step_grams: z.number().min(1),
+
+  is_active: z.boolean().default(true),
+});
+
+export const createIngredientSchema = ingredientBaseSchema.refine(
+  (data) => data.max_grams >= data.min_grams,
+  {
     message: "Gram tối đa phải lớn hơn hoặc bằng gram tối thiểu",
     path: ["max_grams"],
-  });
+  }
+);
 
-export const updateIngredientSchema = createIngredientSchema
-  .safeExtend({})
-  .partial();
+export const updateIngredientSchema = ingredientBaseSchema
+  .partial()
+  .refine(
+    (data) =>
+      data.min_grams === undefined ||
+      data.max_grams === undefined ||
+      data.max_grams >= data.min_grams,
+    {
+      message: "Gram tối đa phải lớn hơn hoặc bằng gram tối thiểu",
+      path: ["max_grams"],
+    }
+  );
 
 export type CreateIngredientInput = z.infer<typeof createIngredientSchema>;
 

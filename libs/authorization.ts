@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 
 import { getCurrentUser } from "@/libs/auth";
 import { getUserById } from "@/services/auth.service";
+import { connectDB } from "@/libs/mongo";
 
 export class AuthorizationError extends Error {
   constructor(message: string, public statusCode: number) {
@@ -16,6 +17,9 @@ export async function requireUser() {
   if (!payload || !mongoose.isValidObjectId(payload.userId)) {
     throw new AuthorizationError("Vui lòng đăng nhập", 401);
   }
+
+  // Đảm bảo MongoDB đã kết nối trước khi truy vấn.
+  await connectDB();
 
   const user = await getUserById(payload.userId);
 

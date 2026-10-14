@@ -5,8 +5,6 @@ import { requireUser } from "@/libs/authorization";
 
 import { cancelMyOrder, handleOrderError } from "@/services/order.service";
 
-export const runtime = "nodejs";
-
 export const PATCH = withDB<{ id: string }>(async (_req, context) => {
   try {
     const user = await requireUser();

@@ -45,7 +45,7 @@ export default function Footer() {
               <Leaf size={23} strokeWidth={2.5} />
             </span>
             <span className="text-[22px] font-extrabold tracking-[-0.04em]">
-              HealthyBowl
+              Heat&Heart
             </span>
           </Link>
 
@@ -105,7 +105,7 @@ export default function Footer() {
         <div
           className={`${container} flex flex-col items-center justify-between gap-2 py-5 text-center text-[11px] text-white/50 sm:flex-row sm:text-left`}
         >
-          <p>© {new Date().getFullYear()} HealthyBowl. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Heat&Heart. All rights reserved.</p>
           <p>Ăn ngon mỗi ngày - Sống khỏe mỗi ngày</p>
         </div>
       </div>

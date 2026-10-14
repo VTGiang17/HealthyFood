@@ -5,7 +5,7 @@ import { register } from "@/services/auth.service";
 import { registerSchema } from "@/validations/auth.schema";
 import { handleAuthError } from "@/services/auth-error";
 
-export const runtime = "nodejs";
+
 
 export const POST = withDB(async (req: Request) => {
   try {

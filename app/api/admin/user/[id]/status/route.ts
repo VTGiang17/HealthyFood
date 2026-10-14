@@ -7,7 +7,7 @@ import { updateUserStatus, handleUserError } from "@/services/user.service";
 
 import { userStatusSchema } from "@/validations/user.schema";
 
-export const runtime = "nodejs";
+
 
 // PATCH /api/admin/users/:id/status
 export const PATCH = withDB<{ id: string }>(async (req, context) => {

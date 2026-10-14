@@ -11,7 +11,7 @@ import {
 
 import { updateCartItemSchema } from "@/validations/cart.schema";
 
-export const runtime = "nodejs";
+
 
 // PUT /api/cart/items/:itemId
 export const PUT = withDB<{ itemId: string }>(async (req, context) => {

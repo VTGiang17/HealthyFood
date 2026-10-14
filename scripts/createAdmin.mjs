@@ -52,7 +52,6 @@ async function createAdmin() {
 
     console.log("Đã kết nối MongoDB");
 
-    // Kiểm tra tài khoản đã tồn tại
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
@@ -60,12 +59,10 @@ async function createAdmin() {
       return;
     }
 
-    // Mã hóa mật khẩu bằng bcryptjs
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Tạo tài khoản Admin
     const admin = await User.create({
-      full_name: "HealthyBowl Admin",
+      full_name: "Heat&Heart Admin",
       email,
       phone: "",
       password: hashedPassword,

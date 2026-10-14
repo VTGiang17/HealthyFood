@@ -27,9 +27,9 @@ const ingredientSchema = new Schema(
 
     nutrition: {
       calories: { type: Number, required: true, min: 0 },
-      protein: { type: Number, required: true, min: 0 },
-      carbs: { type: Number, required: true, min: 0 },
-      fat: { type: Number, required: true, min: 0 },
+      protein: { type: Number, required: false, min: 0 },
+      carbs: { type: Number, required: false, min: 0 },
+      fat: { type: Number, required: false, min: 0 },
     },
 
     price_per_100g: {

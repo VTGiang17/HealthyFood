@@ -4,33 +4,40 @@ import { withDB } from "@/libs/apiHandler";
 
 import { getMeals, handleMealError } from "@/services/meal.service";
 
-// GET /api/meals
-// GET /api/meals?recommended=true
-// GET /api/meals?recommended=false
 export const GET = withDB(async (req: Request) => {
   try {
     const { searchParams } = new URL(req.url);
 
-    const recommended = searchParams.get("recommended");
-
-    if (
-      recommended !== null &&
-      recommended !== "true" &&
-      recommended !== "false"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Tham số recommended không hợp lệ",
-        },
-        { status: 400 }
-      );
-    }
+    const recommendedParam = searchParams.get("isRecommended");
 
     const isRecommended =
-      recommended === null ? undefined : recommended === "true";
+      recommendedParam === "true"
+        ? true
+        : recommendedParam === "false"
+        ? false
+        : undefined;
 
-    const meals = await getMeals(isRecommended);
+    const limitParam = searchParams.get("limit");
+
+    let limit: number | undefined;
+
+    if (limitParam !== null) {
+      const parsed = Number(limitParam);
+
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "limit phải là số nguyên từ 1 đến 100",
+          },
+          { status: 400 }
+        );
+      }
+
+      limit = parsed;
+    }
+
+    const meals = await getMeals(isRecommended, limit);
 
     return NextResponse.json({
       success: true,

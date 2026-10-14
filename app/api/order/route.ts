@@ -11,7 +11,7 @@ import {
 
 import { createOrderSchema } from "@/validations/order.schema";
 
-export const runtime = "nodejs";
+
 
 // GET /api/orders
 export const GET = withDB(async () => {

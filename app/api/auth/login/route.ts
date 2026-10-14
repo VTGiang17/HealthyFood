@@ -6,8 +6,6 @@ import { login } from "@/services/auth.service";
 import { loginSchema } from "@/validations/auth.schema";
 import { handleAuthError } from "@/services/auth-error";
 
-export const runtime = "nodejs";
-
 export const POST = withDB(async (req: Request) => {
   try {
     const body = await req.json();

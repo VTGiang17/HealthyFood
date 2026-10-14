@@ -7,7 +7,7 @@ import { getUsers, handleUserError } from "@/services/user.service";
 
 import { userQuerySchema } from "@/validations/user.schema";
 
-export const runtime = "nodejs";
+
 
 // GET /api/admin/users
 export const GET = withDB(async (req: Request) => {

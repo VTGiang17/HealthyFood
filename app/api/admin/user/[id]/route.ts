@@ -5,7 +5,7 @@ import { requireAdmin } from "@/libs/authorization";
 
 import { getUserById, handleUserError } from "@/services/user.service";
 
-export const runtime = "nodejs";
+
 
 // GET /api/admin/users/:id
 export const GET = withDB<{ id: string }>(async (_req, context) => {

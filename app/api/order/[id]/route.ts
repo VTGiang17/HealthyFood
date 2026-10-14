@@ -5,7 +5,7 @@ import { requireUser } from "@/libs/authorization";
 
 import { getOrderById, handleOrderError } from "@/services/order.service";
 
-export const runtime = "nodejs";
+
 
 export const GET = withDB<{ id: string }>(async (_req, context) => {
   try {

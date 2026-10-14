@@ -5,7 +5,7 @@ import { withDB } from "@/libs/apiHandler";
 import { getCurrentUser } from "@/libs/auth";
 import { getUserById } from "@/services/auth.service";
 
-export const runtime = "nodejs";
+
 
 export const GET = withDB(async () => {
   const payload = await getCurrentUser();

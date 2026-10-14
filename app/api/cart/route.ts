@@ -12,7 +12,7 @@ import {
 
 import { addCartItemSchema } from "@/validations/cart.schema";
 
-export const runtime = "nodejs";
+
 
 // GET /api/cart
 export const GET = withDB(async () => {

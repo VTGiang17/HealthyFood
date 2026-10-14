@@ -44,6 +44,12 @@ const mealSchema = new Schema(
       },
     },
 
+    calories: {
+      type: Number,
+      min: 0,
+      default: null,
+    },
+
     is_recommended: {
       type: Boolean,
       default: false,

@@ -38,18 +38,21 @@ export const API_PATH = {
 
   ADMIN: {
     CATEGORY: {
-      BASE: "/api/admin/category",
-      DETAIL: (id: string) => `/api/admin/category/${id}`,
+      CREATE: "/api/admin/category",
+      UPDATE: (id: string) => `/api/admin/category/${id}`,
+      DELETE: (id: string) => `/api/admin/category/${id}`,
     },
 
     INGREDIENT: {
-      BASE: "/api/admin/ingredient",
-      DETAIL: (id: string) => `/api/admin/ingredient/${id}`,
+      CREATE: "/api/admin/ingredient",
+      UPDATE: (id: string) => `/api/admin/ingredient/${id}`,
+      DELETE: (id: string) => `/api/admin/ingredient/${id}`,
     },
 
     MEAL: {
-      BASE: "/api/admin/meal",
-      DETAIL: (id: string) => `/api/admin/meal/${id}`,
+      CREATE: "/api/admin/meal",
+      UPDATE: (id: string) => `/api/admin/meal/${id}`,
+      DELETE: (id: string) => `/api/admin/meal/${id}`,
     },
 
     ORDER: {

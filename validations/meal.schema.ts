@@ -25,6 +25,8 @@ export const createMealSchema = z.object({
       "Không được chọn trùng nguyên liệu"
     ),
 
+  calories: z.number().min(0).nullable().optional(),
+
   is_recommended: z.boolean().optional(),
 
   is_active: z.boolean().optional(),

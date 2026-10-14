@@ -32,6 +32,7 @@ interface MealData {
   name: string;
   description: string;
   image_url: string;
+  calories?: number | null;
   is_recommended: boolean;
   is_active: boolean;
 
@@ -119,11 +120,20 @@ const formatMeal = async (meal: MealData) => {
 
   const totals = await validateIngredients(items, true);
 
+  const calculatedCalories = Math.round(totals.calories);
+
+  const manualCalories = meal.calories;
+
+  const finalCalories =
+    manualCalories != null ? manualCalories : calculatedCalories;
+
   return {
     ...meal,
+    calories: manualCalories ?? null,
 
     totals: {
-      calories: Math.round(totals.calories),
+      calories: finalCalories,
+      calculated_calories: calculatedCalories,
       protein: Math.round(totals.protein * 10) / 10,
       carbs: Math.round(totals.carbs * 10) / 10,
       fat: Math.round(totals.fat * 10) / 10,
@@ -132,8 +142,7 @@ const formatMeal = async (meal: MealData) => {
   };
 };
 
-// GET danh sách món ăn
-export const getMeals = async (isRecommended?: boolean) => {
+export const getMeals = async (isRecommended?: boolean, limit?: number) => {
   const filter: Record<string, unknown> = {
     is_active: true,
   };
@@ -142,12 +151,19 @@ export const getMeals = async (isRecommended?: boolean) => {
     filter.is_recommended = isRecommended;
   }
 
-  const meals = await Meal.find(filter).sort({ createdAt: -1 }).lean();
+  const query = Meal.find(filter).sort({
+    createdAt: -1,
+  });
+
+  if (limit !== undefined) {
+    query.limit(limit);
+  }
+
+  const meals = await query.lean();
 
   return Promise.all(meals.map(formatMeal));
 };
 
-// GET chi tiết món ăn
 export const getMealById = async (id: string) => {
   if (!mongoose.isValidObjectId(id)) {
     throw new MealError("ID món ăn không hợp lệ", 400);
@@ -165,14 +181,12 @@ export const getMealById = async (id: string) => {
   return formatMeal(meal);
 };
 
-// POST tạo món ăn
 export const createMeal = async (data: CreateMealInput) => {
   await validateIngredients(data.ingredients);
 
   return Meal.create(data);
 };
 
-// PUT cập nhật món ăn
 export const updateMeal = async (id: string, data: UpdateMealInput) => {
   if (!mongoose.isValidObjectId(id)) {
     throw new MealError("ID món ăn không hợp lệ", 400);
@@ -194,7 +208,6 @@ export const updateMeal = async (id: string, data: UpdateMealInput) => {
   return meal;
 };
 
-// DELETE: Ẩn món ăn
 export const deleteMeal = async (id: string) => {
   if (!mongoose.isValidObjectId(id)) {
     throw new MealError("ID món ăn không hợp lệ", 400);
@@ -213,7 +226,6 @@ export const deleteMeal = async (id: string) => {
   return meal;
 };
 
-// Xử lý lỗi trong cùng Service
 export const handleMealError = (error: unknown) => {
   if (error instanceof ZodError) {
     return NextResponse.json(

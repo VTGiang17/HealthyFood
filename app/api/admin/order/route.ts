@@ -5,8 +5,6 @@ import { requireAdmin } from "@/libs/authorization";
 
 import { getAllOrders, handleOrderError } from "@/services/order.service";
 
-export const runtime = "nodejs";
-
 const validStatuses = [
   "pending",
   "confirmed",
