@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { withDB } from "@/libs/apiHandler";
-import { requireAdmin } from "@/libs/authorization";
 
-import { getMeals, createMeal, handleMealError } from "@/services/meal.service";
-
-import { createMealSchema } from "@/validations/meal.schema";
-
-export const runtime = "nodejs";
+import { getMeals, handleMealError } from "@/services/meal.service";
 
 // GET /api/meals
 // GET /api/meals?recommended=true
@@ -42,29 +37,6 @@ export const GET = withDB(async (req: Request) => {
       message: "Lấy danh sách món ăn thành công",
       data: meals,
     });
-  } catch (error) {
-    return handleMealError(error);
-  }
-});
-
-// POST /api/meals
-export const POST = withDB(async (req: Request) => {
-  try {
-    await requireAdmin();
-
-    const body = await req.json();
-    const data = createMealSchema.parse(body);
-
-    const meal = await createMeal(data);
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Tạo món ăn thành công",
-        data: meal,
-      },
-      { status: 201 }
-    );
   } catch (error) {
     return handleMealError(error);
   }
