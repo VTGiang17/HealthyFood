@@ -170,7 +170,7 @@ export default function AdminDashboardPage() {
       ];
 
       const results = await Promise.allSettled(
-        endpoints.map((item) => get<unknown>(item.url))
+        endpoints.map((item) => get<unknown>(item.url)),
       );
 
       const nextStats = { ...initialStats };
@@ -182,7 +182,7 @@ export default function AdminDashboardPage() {
         if (result.status === "fulfilled") {
           nextStats[endpoint.key] = getTotalCount(
             result.value.data,
-            endpoint.collectionKey
+            endpoint.collectionKey,
           );
 
           if (nextStats[endpoint.key] === null) {
@@ -202,7 +202,7 @@ export default function AdminDashboardPage() {
       setError(
         axios.isAxiosError(err)
           ? err.response?.data?.message || "Không thể tải thống kê"
-          : "Không thể tải thống kê"
+          : "Không thể tải thống kê",
       );
     } finally {
       setLoading(false);
@@ -283,11 +283,11 @@ export default function AdminDashboardPage() {
                   hoverable
                   className="h-full !rounded-2xl !border-gray-100 !shadow-sm"
                 >
-                  <div
+                  {/* <div
                     className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl ${item.background} ${item.iconColor}`}
                   >
                     <Icon size={23} />
-                  </div>
+                  </div> */}
 
                   <p className="text-sm font-medium text-gray-500">
                     {item.title}
