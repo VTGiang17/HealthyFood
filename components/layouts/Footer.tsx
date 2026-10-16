@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Leaf, Mail, MapPin, Phone } from "lucide-react";
+import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
 
 const container = "mx-auto w-full max-w-[1200px] px-5 lg:px-8";
 
@@ -40,13 +40,12 @@ export default function Footer() {
       >
         {/* Thương hiệu */}
         <div className="sm:col-span-2 lg:col-span-1">
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#20864f]">
-              <Leaf size={23} strokeWidth={2.5} />
-            </span>
-            <span className="text-[22px] font-extrabold tracking-[-0.04em]">
-              Heat&Heart
-            </span>
+          <Link href="/" className="inline-flex items-center">
+            <img
+              src="/imgs/logo.png"
+              alt="Heat&Heart"
+              className="h-30 w-auto object-contain rounded-full"
+            />
           </Link>
 
           <p className="mt-5 max-w-[320px] text-[13px] leading-7 text-white/65">

@@ -6,7 +6,7 @@ import { isAxiosError } from "axios";
 import { ArrowRight, Check, Loader2, Plus } from "lucide-react";
 import { App } from "antd";
 
-import { getRecommendedMeals, type Meal } from "@/api/admin/meal";
+import { getRecommendedMeals, type Meal } from "@/api/meal";
 
 import { addMealToCart } from "@/api/cart";
 
@@ -22,15 +22,10 @@ export default function FeaturedMeals() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Lưu ID món đang thêm vào giỏ
   const [addingIds, setAddingIds] = useState<string[]>([]);
 
-  // Lưu ID món vừa thêm thành công
   const [addedIds, setAddedIds] = useState<string[]>([]);
 
-  // ================================================
-  // 1. LẤY 4 MÓN ĂN ĐỀ XUẤT
-  // ================================================
   useEffect(() => {
     let cancelled = false;
 
@@ -43,7 +38,7 @@ export default function FeaturedMeals() {
 
         if (!response.data.success) {
           throw new Error(
-            response.data.message || "Không thể lấy món ăn đề xuất"
+            response.data.message || "Không thể lấy món ăn đề xuất",
           );
         }
 
@@ -57,7 +52,7 @@ export default function FeaturedMeals() {
           setMeals(
             data
               .filter((meal) => meal.is_active && meal.is_recommended)
-              .slice(0, 4)
+              .slice(0, 4),
           );
         }
       } catch (err) {
@@ -80,10 +75,6 @@ export default function FeaturedMeals() {
     };
   }, []);
 
-  // ================================================
-  // 2. THÊM MÓN ĂN VÀO GIỎ HÀNG
-  // ================================================
-
   const handleAddToCart = async (meal: Meal) => {
     if (addingIds.includes(meal._id)) {
       return;
@@ -96,15 +87,14 @@ export default function FeaturedMeals() {
 
       if (!response.data.success) {
         throw new Error(
-          response.data.message || "Không thể thêm món ăn vào giỏ hàng"
+          response.data.message || "Không thể thêm món ăn vào giỏ hàng",
         );
       }
 
-      // Cập nhật Badge Header ngay sau khi API thành công
       window.dispatchEvent(new Event("cart-updated"));
 
       setAddedIds((prev) =>
-        prev.includes(meal._id) ? prev : [...prev, meal._id]
+        prev.includes(meal._id) ? prev : [...prev, meal._id],
       );
 
       message.success(`Đã thêm "${meal.name}" vào giỏ hàng`);
@@ -129,16 +119,13 @@ export default function FeaturedMeals() {
       }
 
       message.error(
-        err instanceof Error ? err.message : "Không thể thêm món vào giỏ hàng"
+        err instanceof Error ? err.message : "Không thể thêm món vào giỏ hàng",
       );
     } finally {
       setAddingIds((prev) => prev.filter((id) => id !== meal._id));
     }
   };
 
-  // ================================================
-  // 3. GIAO DIỆN
-  // ================================================
   return (
     <section className="bg-white py-12 lg:py-14">
       <div className={container}>
@@ -214,8 +201,11 @@ export default function FeaturedMeals() {
                   key={meal._id}
                   className="group overflow-hidden rounded-2xl border border-[#edf0eb] bg-white shadow-[0_5px_18px_rgba(0,0,0,0.05)] transition hover:-translate-y-1 hover:shadow-lg"
                 >
-                  {/* ẢNH */}
-                  <div className="relative aspect-[1.4] overflow-hidden bg-[#edf3e9]">
+                  {/* ẢNH - CLICK ĐỂ XEM CHI TIẾT */}
+                  <Link
+                    href={`/meals/${meal._id}`}
+                    className="relative block aspect-[1.4] overflow-hidden bg-[#edf3e9]"
+                  >
                     {meal.image_url ? (
                       <img
                         src={meal.image_url}
@@ -231,13 +221,15 @@ export default function FeaturedMeals() {
                     <span className="absolute left-2.5 top-2.5 rounded-md bg-[#17834c] px-2.5 py-1 text-[10px] font-bold text-white">
                       Đề xuất
                     </span>
-                  </div>
+                  </Link>
 
                   {/* THÔNG TIN */}
                   <div className="p-3 sm:p-4">
-                    <h3 className="line-clamp-1 text-[12px] font-semibold text-[#182a20] sm:text-[13px]">
-                      {meal.name}
-                    </h3>
+                    <Link href={`/meals/${meal._id}`} className="block">
+                      <h3 className="line-clamp-1 text-[12px] font-semibold text-[#182a20] transition-colors hover:text-[#16834b] sm:text-[13px]">
+                        {meal.name}
+                      </h3>
+                    </Link>
 
                     <p className="mt-1 text-[11px] text-gray-400">
                       {calories != null

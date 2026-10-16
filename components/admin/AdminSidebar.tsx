@@ -9,7 +9,6 @@ import {
   UtensilsCrossed,
   ClipboardList,
   Users,
-  Leaf,
   ArrowLeft,
   X,
 } from "lucide-react";
@@ -73,21 +72,17 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         <div className="flex h-[76px] items-center justify-between border-b border-gray-100 px-6">
           <Link
             href="/admin"
-            className="flex items-center gap-2.5"
+            className="flex items-center gap-3"
             onClick={onClose}
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#16834b] text-white">
-              <Leaf size={23} />
-            </div>
-
-            <div>
-              <p className="text-lg font-extrabold text-[#173e2a]">
-                Heat&Heart
-              </p>
-              <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
-                Administration
-              </p>
-            </div>
+            <img
+              src="/imgs/logo.png"
+              alt="Heat&Heart"
+              className="h-9 w-auto object-contain"
+            />
+            <span className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
+              Admin
+            </span>
           </Link>
 
           <button

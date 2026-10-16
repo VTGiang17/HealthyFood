@@ -9,6 +9,7 @@ export interface MealIngredient {
     | {
         _id: string;
         name: string;
+        image_url?: string;
       };
   quantity: number;
 }
@@ -81,7 +82,7 @@ export const getMeals = () => {
 export const createMeal = (data: MealPayload, image?: File | null) => {
   return post<ApiResponse<Meal>>(
     API_PATH.ADMIN.MEAL.CREATE,
-    createFormData(data, image)
+    createFormData(data, image),
   );
 };
 
@@ -89,11 +90,11 @@ export const createMeal = (data: MealPayload, image?: File | null) => {
 export const updateMeal = (
   id: string,
   data: MealPayload,
-  image?: File | null
+  image?: File | null,
 ) => {
   return put<ApiResponse<Meal>>(
     API_PATH.ADMIN.MEAL.UPDATE(id),
-    createFormData(data, image)
+    createFormData(data, image),
   );
 };
 

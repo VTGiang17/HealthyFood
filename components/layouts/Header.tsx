@@ -10,7 +10,6 @@ import type { MenuProps } from "antd";
 import { isAxiosError } from "axios";
 
 import {
-  Leaf,
   Search,
   ShoppingBag,
   UserRound,
@@ -99,7 +98,7 @@ export default function Header() {
 
       const quantity = items.reduce(
         (sum, item) => sum + (Number(item.quantity) || 0),
-        0
+        0,
       );
 
       console.log("🔢 Tổng số lượng:", quantity);
@@ -254,15 +253,15 @@ export default function Header() {
       <header className="sticky top-0 z-50 border-b border-[#edf0eb] bg-white/95 backdrop-blur-xl">
         <div className="relative mx-auto flex h-[72px] w-full max-w-[1200px] items-center justify-between gap-4 px-5 lg:px-8">
           {/* LOGO */}
-          <Link href="/" className="flex shrink-0 items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#20864f] text-white">
-              <Leaf size={23} strokeWidth={2.5} />
-            </div>
-
-            <span className="text-[21px] font-extrabold tracking-[-0.06em] text-[#183227]">
-              Heat&
-              <span className="text-[#20864f]">Heart</span>
-            </span>
+          <Link
+            href="/"
+            className="flex shrink-0 items-center overflow-hidden !rounded-full p-[4px]"
+          >
+            <img
+              src="/imgs/logo.png"
+              alt="Heat&Heart"
+              className="h-15 w-auto object-cover"
+            />
           </Link>
 
           {/* NAVIGATION DESKTOP */}
@@ -272,8 +271,8 @@ export default function Header() {
                 item.href === "/"
                   ? pathname === "/"
                   : item.href.startsWith("/#")
-                  ? false
-                  : pathname === item.href;
+                    ? false
+                    : pathname === item.href;
 
               return (
                 <Link

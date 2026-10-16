@@ -20,7 +20,6 @@ interface LoginResult {
   user?: AdminUser;
 }
 
-// Đăng nhập: Backend chịu trách nhiệm tạo cookie.
 export const loginAdmin = async (email: string, password: string) => {
   const response = await post<AuthResponse<LoginResult>>(API_PATH.AUTH.LOGIN, {
     email,
@@ -31,7 +30,6 @@ export const loginAdmin = async (email: string, password: string) => {
     throw new Error(response.data.message || "Đăng nhập thất bại");
   }
 
-  // Nếu API trả kèm thông tin User thì kiểm tra sớm.
   const user = response.data.data?.user;
 
   if (user && (user.role !== "admin" || user.status !== "active")) {
@@ -43,10 +41,9 @@ export const loginAdmin = async (email: string, password: string) => {
   return response.data;
 };
 
-// Lấy thông tin tài khoản từ cookie.
 export const getAdminProfile = async () => {
   const response = await get<AuthResponse<AdminUser | { user: AdminUser }>>(
-    API_PATH.AUTH.ME
+    API_PATH.AUTH.ME,
   );
 
   if (!response.data.success || !response.data.data) {
@@ -60,7 +57,6 @@ export const getAdminProfile = async () => {
   return user;
 };
 
-// Đăng xuất: Backend xóa cookie.
 export const logoutAdmin = async () => {
   return post(API_PATH.AUTH.LOGOUT);
 };

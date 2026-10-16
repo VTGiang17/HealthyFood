@@ -16,10 +16,26 @@ import type {
 } from "@/validations/meal.schema";
 
 export class MealError extends Error {
-  constructor(message: string, public statusCode: number) {
+  constructor(
+    message: string,
+    public statusCode: number,
+  ) {
     super(message);
     this.name = "MealError";
   }
+}
+
+type MealListSort = "newest" | "priceAsc" | "priceDesc" | "calAsc";
+type MealListCalories = "all" | "under300" | "300to500" | "over500";
+
+export interface PaginatedMealOptions {
+  page: number;
+  limit: number;
+  search?: string;
+  calorieFilter?: MealListCalories;
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: MealListSort;
 }
 
 type MealItem = {
@@ -37,16 +53,20 @@ interface MealData {
   is_active: boolean;
 
   ingredients: {
-    ingredient_id: {
-      toString(): string;
-    };
+    ingredient_id:
+      | mongoose.Types.ObjectId
+      | {
+          _id: mongoose.Types.ObjectId;
+          name: string;
+          image_url?: string;
+        };
     quantity: number;
   }[];
 }
 
 const validateIngredients = async (
   items: MealItem[],
-  allowInactive = false
+  allowInactive = false,
 ) => {
   if (items.length === 0) {
     throw new MealError("Phần cơm phải có ít nhất một nguyên liệu", 400);
@@ -77,7 +97,7 @@ const validateIngredients = async (
   }
 
   const ingredientMap = new Map(
-    ingredients.map((ingredient) => [ingredient._id.toString(), ingredient])
+    ingredients.map((ingredient) => [ingredient._id.toString(), ingredient]),
   );
 
   const nutritionItems = items.map((item) => {
@@ -113,10 +133,19 @@ const validateIngredients = async (
 };
 
 const formatMeal = async (meal: MealData) => {
-  const items: MealItem[] = meal.ingredients.map((item) => ({
-    ingredient_id: item.ingredient_id.toString(),
-    quantity: item.quantity,
-  }));
+  const items: MealItem[] = meal.ingredients.map((item) => {
+    const ingredient = item.ingredient_id;
+
+    const ingredientId =
+      ingredient instanceof mongoose.Types.ObjectId
+        ? ingredient.toString()
+        : ingredient._id.toString();
+
+    return {
+      ingredient_id: ingredientId,
+      quantity: item.quantity,
+    };
+  });
 
   const totals = await validateIngredients(items, true);
 
@@ -172,7 +201,12 @@ export const getMealById = async (id: string) => {
   const meal = await Meal.findOne({
     _id: id,
     is_active: true,
-  }).lean();
+  })
+    .populate({
+      path: "ingredients.ingredient_id",
+      select: "name image_url",
+    })
+    .lean();
 
   if (!meal) {
     throw new MealError("Không tìm thấy món ăn", 404);
@@ -216,7 +250,7 @@ export const deleteMeal = async (id: string) => {
   const meal = await Meal.findByIdAndUpdate(
     id,
     { is_active: false },
-    { new: true }
+    { new: true },
   );
 
   if (!meal) {
@@ -234,7 +268,7 @@ export const handleMealError = (error: unknown) => {
         message: "Dữ liệu không hợp lệ",
         errors: error.issues,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -244,7 +278,7 @@ export const handleMealError = (error: unknown) => {
         success: false,
         message: error.message,
       },
-      { status: error.statusCode }
+      { status: error.statusCode },
     );
   }
 
@@ -254,7 +288,7 @@ export const handleMealError = (error: unknown) => {
         success: false,
         message: "JSON không hợp lệ",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -265,6 +299,140 @@ export const handleMealError = (error: unknown) => {
       success: false,
       message: "Lỗi máy chủ",
     },
-    { status: 500 }
+    { status: 500 },
   );
+};
+
+const sumIngredientField = (
+  field: "price_per_100g" | "nutrition.calories",
+) => ({
+  $sum: {
+    $map: {
+      input: { $ifNull: ["$ingredients", []] },
+      as: "entry",
+      in: {
+        $let: {
+          vars: {
+            ingredient: {
+              $arrayElemAt: [
+                {
+                  $filter: {
+                    input: "$__ingredient_docs",
+                    as: "doc",
+                    cond: { $eq: ["$$doc._id", "$$entry.ingredient_id"] },
+                  },
+                },
+                0,
+              ],
+            },
+          },
+          in: {
+            $multiply: [
+              { $divide: ["$$entry.quantity", 100] },
+              { $ifNull: [`$$ingredient.${field}`, 0] },
+            ],
+          },
+        },
+      },
+    },
+  },
+});
+
+export const getPaginatedMeals = async ({
+  page,
+  limit,
+  search = "",
+  calorieFilter = "all",
+  minPrice = 0,
+  maxPrice,
+  sort = "newest",
+}: PaginatedMealOptions) => {
+  const match: Record<string, unknown> = { is_active: true };
+
+  if (search.trim()) {
+    const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    match.$or = [
+      { name: { $regex: escaped, $options: "i" } },
+      { description: { $regex: escaped, $options: "i" } },
+    ];
+  }
+
+  const calculatedFilter: Record<string, unknown> = {};
+  const priceConditions: Record<string, number> = { $gte: minPrice };
+  if (maxPrice !== undefined) priceConditions.$lte = maxPrice;
+  calculatedFilter.__price = priceConditions;
+
+  if (calorieFilter === "under300") calculatedFilter.__calories = { $lt: 300 };
+  if (calorieFilter === "300to500")
+    calculatedFilter.__calories = { $gte: 300, $lte: 500 };
+  if (calorieFilter === "over500") calculatedFilter.__calories = { $gt: 500 };
+
+  const sorting: Record<string, 1 | -1> =
+    sort === "priceAsc"
+      ? { __price: 1, _id: 1 }
+      : sort === "priceDesc"
+        ? { __price: -1, _id: -1 }
+        : sort === "calAsc"
+          ? { __calories: 1, _id: 1 }
+          : { createdAt: -1, _id: -1 };
+
+  const pipeline: mongoose.PipelineStage[] = [
+    { $match: match },
+    {
+      $lookup: {
+        from: Ingredient.collection.name,
+        localField: "ingredients.ingredient_id",
+        foreignField: "_id",
+        as: "__ingredient_docs",
+      },
+    },
+    {
+      $addFields: {
+        __price: { $round: [sumIngredientField("price_per_100g"), 0] },
+        __calculatedCalories: {
+          $round: [sumIngredientField("nutrition.calories"), 0],
+        },
+      },
+    },
+    {
+      $addFields: {
+        __calories: { $ifNull: ["$calories", "$__calculatedCalories"] },
+      },
+    },
+    { $match: calculatedFilter },
+    { $sort: sorting },
+    {
+      $facet: {
+        metadata: [{ $count: "total" }],
+        records: [
+          { $skip: (page - 1) * limit },
+          { $limit: limit },
+          {
+            $project: {
+              __ingredient_docs: 0,
+              __price: 0,
+              __calories: 0,
+              __calculatedCalories: 0,
+            },
+          },
+        ],
+      },
+    },
+  ];
+
+  const [result] = await Meal.aggregate(pipeline);
+  const total = Number(result?.metadata?.[0]?.total ?? 0);
+  const meals = await Promise.all(
+    ((result?.records ?? []) as MealData[]).map(formatMeal),
+  );
+
+  return {
+    meals,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    },
+  };
 };

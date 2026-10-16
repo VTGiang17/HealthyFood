@@ -21,11 +21,11 @@ export default function LoginPage() {
     try {
       const response = await customerLogin(
         values.email.trim(),
-        values.password
+        values.password,
       );
       if (!response.data.success) {
         throw new Error(
-          response.data.message || "Email hoặc mật khẩu không chính xác"
+          response.data.message || "Email hoặc mật khẩu không chính xác",
         );
       }
       window.dispatchEvent(new Event("auth-updated"));
@@ -39,8 +39,8 @@ export default function LoginPage() {
       const serverMessage = isAxiosError(e)
         ? (e.response?.data as { message?: string } | undefined)?.message
         : e instanceof Error
-        ? e.message
-        : undefined;
+          ? e.message
+          : undefined;
       setError(serverMessage || "Không thể đăng nhập. Vui lòng thử lại.");
     } finally {
       setLoading(false);
@@ -63,7 +63,12 @@ export default function LoginPage() {
             href="/"
             className="inline-flex items-center gap-2 text-xl font-extrabold text-white"
           >
-            <Leaf size={25} /> Heat&Heart
+            <img
+              src="imgs/logo.png"
+              alt="logo"
+              className="h-10 rounded-full object-cover overflow-hidden"
+            />
+            Heat&Heart
           </Link>
           <div>
             <p className="mb-4 text-xs font-extrabold uppercase tracking-widest text-[#b6e4bd]">
@@ -138,8 +143,14 @@ export default function LoginPage() {
               Đăng nhập <ArrowRight size={16} />
             </Button>
           </Form>
-          <p className="mt-7 text-center text-xs leading-6 text-gray-400">
-            Tài khoản được quản lý bởi hệ thống Heat&Heart.
+          <p className="mt-6 text-center text-sm text-gray-500">
+            Chưa có tài khoản?{" "}
+            <Link
+              href="/register"
+              className="font-semibold text-[#145b38] hover:underline"
+            >
+              Đăng ký ngay
+            </Link>
           </p>
           <Link
             href="/meals"

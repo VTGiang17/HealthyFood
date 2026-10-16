@@ -10,7 +10,10 @@ import { AuthorizationError } from "@/libs/authorization";
 import type { UserQueryInput } from "@/validations/user.schema";
 
 export class UserError extends Error {
-  constructor(message: string, public statusCode: number) {
+  constructor(
+    message: string,
+    public statusCode: number,
+  ) {
     super(message);
     this.name = "UserError";
   }
@@ -25,7 +28,6 @@ const validateId = (id: string) => {
 const publicFields =
   "full_name email phone avatar role status createdAt updatedAt";
 
-// Lấy danh sách người dùng
 export const getUsers = async (query: UserQueryInput) => {
   const filter: Record<string, unknown> = {};
 
@@ -71,7 +73,6 @@ export const getUsers = async (query: UserQueryInput) => {
   };
 };
 
-// Lấy chi tiết người dùng
 export const getUserById = async (id: string) => {
   validateId(id);
 
@@ -84,11 +85,10 @@ export const getUserById = async (id: string) => {
   return user;
 };
 
-// Khóa hoặc mở khóa tài khoản
 export const updateUserStatus = async (
   id: string,
   status: "active" | "blocked",
-  currentAdminId: string
+  currentAdminId: string,
 ) => {
   validateId(id);
 
@@ -119,11 +119,10 @@ export const updateUserStatus = async (
   return getUserById(id);
 };
 
-// Thay đổi quyền người dùng
 export const updateUserRole = async (
   id: string,
   role: "admin" | "customer",
-  currentAdminId: string
+  currentAdminId: string,
 ) => {
   validateId(id);
 
@@ -153,7 +152,6 @@ export const updateUserRole = async (
   return getUserById(id);
 };
 
-// Xử lý lỗi
 export const handleUserError = (error: unknown) => {
   if (error instanceof ZodError) {
     return NextResponse.json(
@@ -162,7 +160,7 @@ export const handleUserError = (error: unknown) => {
         message: "Dữ liệu không hợp lệ",
         errors: error.issues,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -172,7 +170,7 @@ export const handleUserError = (error: unknown) => {
         success: false,
         message: error.message,
       },
-      { status: error.statusCode }
+      { status: error.statusCode },
     );
   }
 
@@ -182,7 +180,7 @@ export const handleUserError = (error: unknown) => {
         success: false,
         message: "JSON không hợp lệ",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -193,6 +191,6 @@ export const handleUserError = (error: unknown) => {
       success: false,
       message: "Lỗi máy chủ",
     },
-    { status: 500 }
+    { status: 500 },
   );
 };

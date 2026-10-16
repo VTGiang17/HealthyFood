@@ -1,353 +1,461 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { App, Button, Empty, InputNumber, Spin, Tabs } from "antd";
+import { useParams, useRouter } from "next/navigation";
+import { App } from "antd";
 import { isAxiosError } from "axios";
 import {
   ArrowLeft,
+  ArrowRight,
+  Check,
+  ChevronRight,
   Flame,
-  Leaf,
+  Loader2,
   Minus,
   Plus,
-  ShoppingCart,
-  Utensils,
+  ShoppingBag,
+  UtensilsCrossed,
 } from "lucide-react";
-import { getMealDetail } from "@/api/customer";
+
+import { getMealDetail } from "@/api/meal";
 import { addMealToCart } from "@/api/cart";
 import type { Meal } from "@/api/admin/meal";
 
-const money = (price: number) =>
-  new Intl.NumberFormat("vi-VN").format(price) + "đ";
-const idOf = (value: string | { _id: string; name?: string }) =>
-  typeof value === "string" ? value : value._id;
+const formatPrice = (value: number) =>
+  new Intl.NumberFormat("vi-VN").format(Math.round(value)) + "đ";
+
+const roundOne = (value: number) => Math.round(value * 10) / 10;
+
+type MealIngredient = Meal["ingredients"][number];
+
+const getIngredient = (item: MealIngredient) => {
+  const value = item.ingredient_id;
+  if (typeof value === "string") {
+    return { id: value, name: "Nguyên liệu", image: "" };
+  }
+  return {
+    id: value._id,
+    name: value.name,
+    image:
+      "image_url" in value && typeof value.image_url === "string"
+        ? value.image_url
+        : "",
+  };
+};
+
+function MealPhoto({
+  src,
+  alt,
+  className = "",
+}: {
+  src?: string | null;
+  alt: string;
+  className?: string;
+}) {
+  return src ? (
+    <img
+      src={src}
+      alt={alt}
+      className={`h-full w-full object-cover ${className}`}
+    />
+  ) : (
+    <div className="flex h-full w-full items-center justify-center bg-[#eff1e9] text-[#9ba99c]">
+      <UtensilsCrossed size={36} strokeWidth={1.25} />
+    </div>
+  );
+}
 
 export default function MealDetailPage() {
   const { message } = App.useApp();
-  const params = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
+
   const [meal, setMeal] = useState<Meal | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
-  const [activeImage, setActiveImage] = useState("");
+  const [justAdded, setJustAdded] = useState(false);
 
   useEffect(() => {
-    let live = true;
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const response = await getMealDetail(params.id);
-        if (!response.data.success || !response.data.data)
+    let active = true;
+    setLoading(true);
+    setError("");
+    setMeal(null);
+    setQuantity(1);
+    setJustAdded(false);
+
+    getMealDetail(id)
+      .then((response) => {
+        if (!response.data.success || !response.data.data) {
           throw new Error(response.data.message || "Không tìm thấy món ăn");
-        if (live) {
-          setMeal(response.data.data);
-          setActiveImage(response.data.data.image_url || "");
         }
-      } catch (e: unknown) {
-        if (live)
-          setError(
-            isAxiosError(e)
-              ? (e.response?.data as { message?: string })?.message ||
-                  "Không tải được món ăn"
-              : e instanceof Error
-              ? e.message
-              : "Không tải được món ăn"
-          );
-      } finally {
-        if (live) setLoading(false);
-      }
-    };
-    void load();
+        if (active) setMeal(response.data.data);
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        const text = isAxiosError(err)
+          ? (err.response?.data as { message?: string } | undefined)?.message
+          : err instanceof Error
+            ? err.message
+            : undefined;
+        setError(text || "Không thể tải thông tin món ăn");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
     return () => {
-      live = false;
+      active = false;
     };
-  }, [params.id]);
+  }, [id]);
 
   const ingredients = useMemo(() => meal?.ingredients ?? [], [meal]);
-  const add = async (goToCart = false) => {
+
+  const addToCart = async (checkout: boolean) => {
     if (!meal || adding) return;
     setAdding(true);
     try {
-      const result = await addMealToCart(meal._id, quantity);
-      if (!result.data.success)
-        throw new Error(result.data.message || "Thêm giỏ hàng thất bại");
+      const response = await addMealToCart(meal._id, quantity);
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Không thể thêm vào giỏ hàng");
+      }
       window.dispatchEvent(new Event("cart-updated"));
-      message.success(`Đã thêm ${quantity} suất ${meal.name} vào giỏ`);
-      if (goToCart) router.push("/cart");
-    } catch (e: unknown) {
-      if (isAxiosError(e) && e.response?.status === 401) {
-        message.warning("Vui lòng đăng nhập trước khi đặt món");
+      setJustAdded(true);
+      message.success(`Đã thêm ${quantity} suất vào giỏ hàng`);
+      if (checkout) router.push("/cart");
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response?.status === 401) {
+        message.warning("Vui lòng đăng nhập để thêm món vào giỏ hàng");
         router.push(`/login?next=${encodeURIComponent(`/meals/${meal._id}`)}`);
-      } else
-        message.error(
-          isAxiosError(e)
-            ? (e.response?.data as { message?: string })?.message ||
-                "Thêm giỏ hàng thất bại"
-            : e instanceof Error
-            ? e.message
-            : "Thêm giỏ hàng thất bại"
-        );
+        return;
+      }
+      const text = isAxiosError(err)
+        ? (err.response?.data as { message?: string } | undefined)?.message
+        : err instanceof Error
+          ? err.message
+          : undefined;
+      message.error(text || "Không thể thêm món vào giỏ hàng");
     } finally {
       setAdding(false);
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="flex min-h-[65vh] items-center justify-center">
-        <Spin size="large" />
-      </div>
+      <main className="min-h-screen bg-[#fcfcfa]">
+        <div className="mx-auto max-w-[1200px] px-5 py-10 lg:px-8">
+          <div className="mb-10 h-4 w-44 animate-pulse rounded bg-[#e9eee7]" />
+          <div className="grid gap-12 lg:grid-cols-2">
+            <div className="aspect-[5/4] animate-pulse rounded-[22px] bg-[#eef0e9]" />
+            <div className="space-y-5 pt-5">
+              <div className="h-4 w-24 animate-pulse rounded bg-[#e9eee7]" />
+              <div className="h-12 w-4/5 animate-pulse rounded bg-[#e9eee7]" />
+              <div className="h-5 w-1/2 animate-pulse rounded bg-[#e9eee7]" />
+              <div className="mt-8 h-28 animate-pulse rounded bg-[#f0f2ec]" />
+            </div>
+          </div>
+        </div>
+      </main>
     );
-  if (!meal || error)
-    return (
-      <div className="mx-auto max-w-[1100px] px-5 py-20">
-        <Empty description={error || "Không tìm thấy món ăn"}>
-          <Link href="/meals" className="font-bold text-[#145b38]">
-            Quay về thực đơn
-          </Link>
-        </Empty>
-      </div>
-    );
+  }
 
-  const nutrition = meal.totals;
-  const calories = nutrition?.calories ?? meal.calories;
-  const price = nutrition?.price;
-  return (
-    <main className="mx-auto w-full max-w-[1200px] px-5 py-8 lg:px-8">
-      <Link
-        href="/meals"
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#375142] hover:text-[#145b38]"
-      >
-        <ArrowLeft size={16} /> Quay lại thực đơn
-      </Link>
-      <div className="grid gap-9 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-        <section>
-          <div className="aspect-[1.32] overflow-hidden rounded-2xl bg-[#eef3e9]">
-            {activeImage ? (
-              <img
-                src={activeImage}
-                alt={meal.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-gray-400">
-                <Utensils size={56} />
-              </div>
-            )}
-          </div>
-          {meal.image_url && (
-            <div className="mt-3 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setActiveImage(meal.image_url || "")}
-                className="h-20 w-24 overflow-hidden rounded-xl border-2 border-[#145b38]"
-              >
-                <img
-                  src={meal.image_url}
-                  alt={meal.name}
-                  className="h-full w-full object-cover"
-                />
-              </button>
-            </div>
-          )}
-        </section>
-        <section className="py-1">
-          <div className="mb-3 flex flex-wrap gap-2">
-            {meal.is_recommended && (
-              <span className="rounded-full bg-[#e6f3e5] px-3 py-1 text-xs font-bold text-[#145b38]">
-                Món đề xuất
-              </span>
-            )}
-            <span className="rounded-full bg-[#f4f6f1] px-3 py-1 text-xs text-gray-600">
-              Healthy meal
-            </span>
-          </div>
-          <h1 className="text-3xl font-extrabold leading-tight text-[#17271e] lg:text-4xl">
-            {meal.name}
+  if (error || !meal) {
+    return (
+      <main className="flex min-h-[65vh] items-center justify-center bg-[#fcfcfa] px-5">
+        <div className="max-w-md text-center">
+          <UtensilsCrossed
+            className="mx-auto mb-5 text-[#99ad9b]"
+            size={36}
+            strokeWidth={1.2}
+          />
+          <h1 className="text-2xl font-semibold tracking-tight text-[#22362a]">
+            Không thể hiển thị món ăn
           </h1>
-          <p className="mt-4 text-3xl font-extrabold text-[#145b38]">
-            {price != null ? money(price) : "Chưa có giá"}
+          <p className="mt-3 text-sm leading-7 text-[#7b8a7e]">
+            {error || "Món ăn hiện không khả dụng."}
           </p>
-          <p className="mt-1 text-xs text-gray-400">
-            Giá tính từ nguyên liệu theo Backend
-          </p>
-          <p className="mt-5 text-sm leading-7 text-gray-600">
-            {meal.description ||
-              "Một lựa chọn dinh dưỡng cân bằng cho bữa ăn của bạn."}
-          </p>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              {
-                label: "Calories",
-                value: calories == null ? "—" : `${calories} kcal`,
-                icon: <Flame size={15} />,
-              },
-              {
-                label: "Protein",
-                value:
-                  nutrition?.protein == null ? "—" : `${nutrition.protein}g`,
-                icon: <Leaf size={15} />,
-              },
-              {
-                label: "Carbs",
-                value: nutrition?.carbs == null ? "—" : `${nutrition.carbs}g`,
-                icon: <Utensils size={15} />,
-              },
-              {
-                label: "Fat",
-                value: nutrition?.fat == null ? "—" : `${nutrition.fat}g`,
-                icon: <Utensils size={15} />,
-              },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-xl bg-[#f3f8f1] p-3 text-center"
-              >
-                <div className="mb-1 flex justify-center text-[#16834b]">
-                  {stat.icon}
-                </div>
-                <p className="text-sm font-extrabold text-[#203729]">
-                  {stat.value}
-                </p>
-                <p className="text-[10px] text-gray-500">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-7">
-            <label className="mb-2 block text-xs font-bold text-gray-600">
-              Số lượng
-            </label>
-            <div className="inline-flex items-center rounded-lg border border-[#e5ebdf]">
-              <button
-                aria-label="Giảm"
-                type="button"
-                disabled={quantity <= 1}
-                onClick={() => setQuantity((v) => Math.max(1, v - 1))}
-                className="flex h-10 w-10 items-center justify-center disabled:opacity-40"
-              >
-                <Minus size={15} />
-              </button>
-              <InputNumber
-                min={1}
-                max={99}
-                value={quantity}
-                controls={false}
-                onChange={(v) => setQuantity(Math.min(99, Math.max(1, v || 1)))}
-                className="!w-14 !border-0 text-center"
+          <Link
+            href="/meals"
+            className="mt-7 inline-flex items-center gap-2 border-b border-[#285d3f] pb-1 text-sm font-semibold text-[#285d3f]"
+          >
+            <ArrowLeft size={15} /> Trở về thực đơn
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  const calories = meal.totals?.calories ?? meal.calories;
+  const price = meal.totals?.price;
+  const totalPrice = price == null ? null : price * quantity;
+  const nutrition = [
+    {
+      label: "Năng lượng",
+      value: calories == null ? "—" : `${Math.round(calories)}`,
+      unit: "kcal",
+    },
+    {
+      label: "Chất đạm",
+      value:
+        meal.totals?.protein == null ? "—" : `${roundOne(meal.totals.protein)}`,
+      unit: "g",
+    },
+    {
+      label: "Tinh bột",
+      value:
+        meal.totals?.carbs == null ? "—" : `${roundOne(meal.totals.carbs)}`,
+      unit: "g",
+    },
+    {
+      label: "Chất béo",
+      value: meal.totals?.fat == null ? "—" : `${roundOne(meal.totals.fat)}`,
+      unit: "g",
+    },
+  ];
+
+  return (
+    <main className="min-h-screen bg-[#fcfcfa] pb-16 text-[#22362a]">
+      <div className="mx-auto w-full max-w-[1200px] px-5 lg:px-8">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-2 py-6 text-[12px] text-[#869388] sm:py-8"
+        >
+          <Link href="/" className="transition hover:text-[#285d3f]">
+            Trang chủ
+          </Link>
+          <ChevronRight size={13} />
+          <Link href="/meals" className="transition hover:text-[#285d3f]">
+            Thực đơn
+          </Link>
+          <ChevronRight size={13} />
+          <span className="max-w-[50vw] truncate font-medium text-[#334b39]">
+            {meal.name}
+          </span>
+        </nav>
+
+        <div className="grid items-start gap-9 md:gap-12 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-[68px]">
+          <div className="overflow-hidden rounded-[20px] bg-[#edf1e9] sm:rounded-[24px]">
+            <div className="aspect-[5/4] overflow-hidden sm:aspect-[1.14]">
+              <MealPhoto
+                src={meal.image_url}
+                alt={meal.name}
+                className="transition-transform duration-700 hover:scale-[1.025]"
               />
-              <button
-                aria-label="Tăng"
-                type="button"
-                disabled={quantity >= 99}
-                onClick={() => setQuantity((v) => Math.min(99, v + 1))}
-                className="flex h-10 w-10 items-center justify-center disabled:opacity-40"
-              >
-                <Plus size={15} />
-              </button>
             </div>
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <Button
-              loading={adding}
-              type="primary"
-              onClick={() => void add(false)}
-              className="!h-12 !rounded-xl !bg-[#145b38] !font-bold"
-            >
-              <ShoppingCart size={16} /> Thêm vào giỏ hàng
-            </Button>
-            <Button
-              disabled={adding}
-              onClick={() => void add(true)}
-              className="!h-12 !rounded-xl !border-[#145b38] !font-bold !text-[#145b38]"
-            >
-              Đặt ngay <Plus size={16} />
-            </Button>
-          </div>
-        </section>
-      </div>
-      <section className="mt-10 rounded-2xl border border-[#e9eee7] bg-white p-5 sm:p-7">
-        <Tabs
-          items={[
-            {
-              key: "ingredients",
-              label: "Thành phần",
-              children: (
-                <div>
-                  <p className="mb-4 text-sm text-gray-500">
-                    Nguyên liệu và định lượng trong một phần ăn.
+
+          <section className="lg:pt-2">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="h-px w-7 bg-[#70977d]" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#557c60]">
+                Heat & Heart · Healthy meals
+              </span>
+            </div>
+
+            <h1 className="max-w-[520px] text-[32px] font-semibold leading-[1.18] tracking-[-0.045em] text-[#203829] sm:text-[40px] lg:text-[43px]">
+              {meal.name}
+            </h1>
+
+            {meal.description && (
+              <p className="mt-5 max-w-[460px] text-[14px] leading-[1.9] text-[#718073]">
+                {meal.description}
+              </p>
+            )}
+
+            <div className="mt-7 flex items-baseline justify-between gap-4 border-b border-[#e6ebe3] pb-6">
+              <div>
+                <p className="mb-1.5 text-[11px] tracking-wide text-[#91a094]">
+                  Giá nguyên liệu dự kiến / suất
+                </p>
+                <p className="text-[30px] font-semibold tracking-[-0.05em] text-[#285d3f] sm:text-[34px]">
+                  {price == null ? "Chưa có giá" : formatPrice(price)}
+                </p>
+              </div>
+              {calories != null && (
+                <div className="flex items-center gap-1.5 text-[13px] text-[#778579]">
+                  {Math.round(calories)} kcal
+                </div>
+              )}
+            </div>
+
+            <div className="mt-7 flex flex-wrap items-end justify-between gap-5">
+              <div>
+                <p className="mb-3 text-[12px] font-medium text-[#526657]">
+                  Số lượng
+                </p>
+                <div className="inline-flex h-12 items-center rounded-xl border border-[#dce5da] bg-white">
+                  <button
+                    type="button"
+                    aria-label="Giảm số lượng"
+                    disabled={adding || quantity <= 1}
+                    onClick={() => {
+                      setQuantity((v) => Math.max(1, v - 1));
+                      setJustAdded(false);
+                    }}
+                    className="flex h-full w-12 items-center justify-center text-[#43644c] transition hover:bg-[#f5f8f3] disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="w-11 text-center text-[14px] font-semibold tabular-nums">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Tăng số lượng"
+                    disabled={adding || quantity >= 99}
+                    onClick={() => {
+                      setQuantity((v) => Math.min(99, v + 1));
+                      setJustAdded(false);
+                    }}
+                    className="flex h-full w-12 items-center justify-center text-[#43644c] transition hover:bg-[#f5f8f3] disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+              </div>
+              {totalPrice != null && (
+                <div className="text-right">
+                  <p className="mb-1 text-[11px] text-[#91a094]">Tạm tính</p>
+                  <p className="text-[18px] font-semibold tracking-tight text-[#284c36]">
+                    {formatPrice(totalPrice)}
                   </p>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {ingredients.map((i, index) => (
-                      <div
-                        key={`${idOf(i.ingredient_id)}-${index}`}
-                        className="flex items-center gap-3 rounded-xl bg-[#f7f9f5] p-4"
-                      >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e4eee0] text-[#145b38]">
-                          <Leaf size={17} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-[#23392c]">
-                            {typeof i.ingredient_id === "string"
-                              ? `Nguyên liệu ${index + 1}`
-                              : i.ingredient_id.name}
-                          </p>
-                          <p className="text-xs text-gray-500">{i.quantity}g</p>
-                        </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]">
+              <button
+                type="button"
+                disabled={adding}
+                onClick={() => void addToCart(false)}
+                className="inline-flex h-[54px] items-center justify-center gap-2.5 rounded-xl bg-[#285d3f] px-7 text-[13px] font-semibold text-white transition hover:bg-[#1c482e] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {adding ? (
+                  <Loader2 size={17} className="animate-spin" />
+                ) : justAdded ? (
+                  <Check size={17} />
+                ) : (
+                  <ShoppingBag size={17} />
+                )}
+                {justAdded ? "Đã thêm vào giỏ" : "Thêm vào giỏ hàng"}
+              </button>
+              <button
+                type="button"
+                disabled={adding}
+                onClick={() => void addToCart(true)}
+                className="inline-flex h-[54px] items-center justify-center gap-2 rounded-xl border border-[#cad9cc] bg-white px-6 text-[13px] font-semibold text-[#285d3f] transition hover:border-[#285d3f] hover:bg-[#f6f9f5] disabled:opacity-60"
+              >
+                Đặt ngay <ArrowRight size={16} />
+              </button>
+            </div>
+            <p className="mt-4 text-[11px] leading-5 text-[#97a39a]">
+              Dinh dưỡng và giá được ước tính theo thành phần của một suất. Giá
+              khi đặt hàng do hệ thống xác nhận.
+            </p>
+          </section>
+        </div>
+
+        <div className="mt-14 grid gap-10 border-t border-[#e6ebe3] pt-10 sm:mt-20 sm:pt-12 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-[68px]">
+          <section>
+            <div className="mb-7">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.17em] text-[#789781]">
+                Trong mỗi suất ăn
+              </span>
+              <h2 className="mt-2 text-[25px] font-semibold tracking-[-0.04em] text-[#253e2d] sm:text-[29px]">
+                Thành phần nguyên liệu
+              </h2>
+              <p className="mt-2 text-[13px] leading-7 text-[#819083]">
+                Nguyên liệu và khối lượng được sử dụng trong món ăn này.
+              </p>
+            </div>
+            {ingredients.length === 0 ? (
+              <p className="text-sm text-[#879487]">
+                Chưa có thông tin nguyên liệu.
+              </p>
+            ) : (
+              <div className="grid gap-x-7 sm:grid-cols-2">
+                {ingredients.map((item, index) => {
+                  const ingredient = getIngredient(item);
+                  return (
+                    <div
+                      key={`${ingredient.id}-${index}`}
+                      className="flex items-center gap-3.5 border-b border-[#edf0ea] py-3.5"
+                    >
+                      <div className="h-[62px] w-[62px] shrink-0 overflow-hidden rounded-xl bg-[#f0f3ed]">
+                        <MealPhoto
+                          src={ingredient.image}
+                          alt={ingredient.name}
+                        />
                       </div>
-                    ))}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-semibold text-[#354d3b]">
+                          {ingredient.name}
+                        </p>
+                        <p className="mt-1 text-[12px] text-[#8b998d]">
+                          {item.quantity}g / suất
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="lg:border-l lg:border-[#e6ebe3] lg:pl-10">
+            <div className="mb-7">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.17em] text-[#789781]">
+                Thông tin tham khảo
+              </span>
+              <h2 className="mt-2 text-[25px] font-semibold tracking-[-0.04em] text-[#253e2d] sm:text-[29px]">
+                Giá trị dinh dưỡng
+              </h2>
+              <p className="mt-2 text-[13px] leading-7 text-[#819083]">
+                Các chỉ số được tính trên một suất ăn.
+              </p>
+            </div>
+            <div className="border-t border-[#e6ebe3]">
+              {nutrition.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-baseline justify-between gap-4 border-b border-[#e6ebe3] py-[18px]"
+                >
+                  <span className="text-[13px] text-[#6b7b6e]">
+                    {item.label}
+                  </span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[20px] font-semibold tracking-[-0.035em] tabular-nums text-[#294a35]">
+                      {item.value}
+                    </span>
+                    {item.value !== "—" && (
+                      <span className="text-[12px] text-[#869487]">
+                        {item.unit}
+                      </span>
+                    )}
                   </div>
                 </div>
-              ),
-            },
-            {
-              key: "nutrition",
-              label: "Thông tin dinh dưỡng",
-              children: (
-                <div className="grid gap-3 text-sm sm:grid-cols-2">
-                  {[
-                    ["Calories", calories == null ? "—" : `${calories} kcal`],
-                    [
-                      "Protein",
-                      nutrition?.protein == null
-                        ? "—"
-                        : `${nutrition.protein}g`,
-                    ],
-                    [
-                      "Carbs",
-                      nutrition?.carbs == null ? "—" : `${nutrition.carbs}g`,
-                    ],
-                    [
-                      "Chất béo",
-                      nutrition?.fat == null ? "—" : `${nutrition.fat}g`,
-                    ],
-                  ].map(([label, value]) => (
-                    <div
-                      key={label}
-                      className="flex justify-between border-b border-[#edf0eb] py-3"
-                    >
-                      <span>{label}</span>
-                      <strong>{value}</strong>
-                    </div>
-                  ))}
-                </div>
-              ),
-            },
-            {
-              key: "description",
-              label: "Mô tả",
-              children: (
-                <p className="text-sm leading-7 text-gray-600">
-                  {meal.description || "Chưa có mô tả chi tiết."}
-                </p>
-              ),
-            },
-          ]}
-        />
-      </section>
+              ))}
+            </div>
+            <Link
+              href="/build-bowl"
+              className="mt-7 inline-flex items-center gap-2 text-[13px] font-semibold text-[#285d3f] transition hover:gap-3"
+            >
+              Muốn tự điều chỉnh nguyên liệu? <ArrowRight size={16} />
+            </Link>
+          </section>
+        </div>
+
+        <div className="mt-12 border-t border-[#e6ebe3] pt-7 sm:mt-16">
+          <Link
+            href="/meals"
+            className="inline-flex items-center gap-2 text-[13px] font-medium text-[#587260] transition hover:text-[#285d3f]"
+          >
+            <ArrowLeft size={16} /> Khám phá thêm món ăn
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }
