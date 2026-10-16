@@ -16,7 +16,6 @@ const linkGroups = [
     title: "Hỗ trợ khách hàng",
     links: [
       { name: "Giỏ hàng", href: "/cart" },
-      { name: "Theo dõi đơn hàng", href: "/orders" },
       { name: "Tài khoản của tôi", href: "/profile" },
     ],
   },
@@ -24,8 +23,8 @@ const linkGroups = [
 
 const contacts = [
   { icon: MapPin, text: "TP. Hồ Chí Minh, Việt Nam" },
-  { icon: Phone, text: "Thông tin hotline đang cập nhật" },
-  { icon: Mail, text: "Thông tin email đang cập nhật" },
+  { icon: Phone, text: "0837578751" },
+  { icon: Mail, text: "HeatHeart@gmail.com" },
 ];
 
 export default function Footer() {
